@@ -66,20 +66,20 @@ class Board:
         for row in range(8):
             self.field.append([None] * 8)
         self.field[0] = [
-            Rook(WHITE), Knight(WHITE), Bishop(WHITE), Queen(WHITE),
-            King(WHITE), Bishop(WHITE), Knight(WHITE), Rook(WHITE)
+            Rook(0, 0, WHITE), Knight(0, 1, WHITE), Bishop(0, 2, WHITE), Queen(0, 3, WHITE),
+            King(0, 4, WHITE), Bishop(0, 5, WHITE), Knight(0, 6, WHITE), Rook(0, 7, WHITE)
         ]
         self.field[1] = [
-            Pawn(WHITE), Pawn(WHITE), Pawn(WHITE), Pawn(WHITE),
-            Pawn(WHITE), Pawn(WHITE), Pawn(WHITE), Pawn(WHITE)
+            Pawn(1, 0, WHITE), Pawn(1, 1, WHITE), Pawn(1, 2, WHITE), Pawn(1, 3, WHITE),
+            Pawn(1, 4, WHITE), Pawn(1, 5, WHITE), Pawn(1, 6, WHITE), Pawn(1, 7, WHITE)
         ]
         self.field[6] = [
-            Pawn(BLACK), Pawn(BLACK), Pawn(BLACK), Pawn(BLACK),
-            Pawn(BLACK), Pawn(BLACK), Pawn(BLACK), Pawn(BLACK)
+            Pawn(6, 0, BLACK), Pawn(6, 1, BLACK), Pawn(6, 2, BLACK), Pawn(6, 3, BLACK),
+            Pawn(6, 4, BLACK), Pawn(6, 5, BLACK), Pawn(6, 6, BLACK), Pawn(6, 7, BLACK)
         ]
         self.field[7] = [
-            Rook(BLACK), Knight(BLACK), Bishop(BLACK), Queen(BLACK),
-            King(BLACK), Bishop(BLACK), Knight(BLACK), Rook(BLACK)
+            Rook(7, 0, BLACK), Knight(7, 1, BLACK), Bishop(7, 2, BLACK), Queen(7, 3, BLACK),
+            King(7, 4, BLACK), Bishop(7, 5, BLACK), Knight(7, 6, BLACK), Rook(7, 7, BLACK)
         ]
 
     def current_player_color(self):
@@ -132,9 +132,19 @@ class Board:
         self.color = opponent(self.color)
         return True
 
+    def is_under_attack(self, row, col, color):
+        for i in self.field:
+            for piece in i:
+                if piece is not None:
+                    if piece.get_color() == color and piece.can_move(row, col):
+                        return True
+        return False
+
 
 class Pawn:
-    def __init__(self, color):
+    def __init__(self, row, col, color):
+        self.row = row
+        self.col = col
         self.color = color
 
     def get_color(self):
@@ -174,8 +184,11 @@ class Pawn:
 
 
 class Rook:
-    def __init__(self, color):
+    def __init__(self, row, col, color):
+        self.row = row
+        self.col = col
         self.color = color
+        self.a = 0
 
     def get_color(self):
         return self.color
@@ -208,27 +221,37 @@ class Rook:
 
 
 class Knight:
-    """
-    Класс коня. Пока что заглушка, которая может ходить в любую клетку.
-    """
-    def __init__(self, color):
+    def __init__(self, row, col, color):
+        self.row = row
+        self.col = col
         self.color = color
+
+    def set_position(self, row, col):
+        self.row = row
+        self.col = col
+
+    def char(self):
+        return 'N'
 
     def get_color(self):
         return self.color
 
-    def char(self):
-        return 'N'  # kNight, буква 'K' уже занята королём
-
-    def can_move(self, board, row, col, row1, col1):
-        return True  # Заглушка
+    def can_move(self, row, col):
+        if not correct_coords(row, col):
+            return False
+        res = [abs(self.col - col), abs(self.row - row)]
+        if min(res) == 1 and max(res) == 2:
+            return True
+        return False
 
 
 class King:
     """
     Класс короля. Пока что заглушка, которая может ходить в любую клетку.
     """
-    def __init__(self, color):
+    def __init__(self, row, col, color):
+        self.row = row
+        self.col = col
         self.color = color
 
     def get_color(self):
@@ -242,37 +265,70 @@ class King:
 
 
 class Queen:
-    """
-    Класс ферзя. Пока что заглушка, которая может ходить в любую клетку.
-    """
-    def __init__(self, color):
+    def __init__(self, row, col, color):
+        self.row = row
+        self.col = col
         self.color = color
 
-    def get_color(self):
-        return self.color
+    def set_position(self, row, col):
+        self.row = row
+        self.col = col
 
     def char(self):
         return 'Q'
 
+    def get_color(self):
+        return self.color
+
     def can_move(self, board, row, col, row1, col1):
-        return True  # Заглушка
+        piece = board.get_piece(row1, col1)
+        if not correct_coords(row1, col1):
+            return False
+        if row == row1 and col == col1:
+            return False
+        if piece is not None:
+            if piece.get_color() == self.color:
+                return False
+        xr = abs(row1 - row)
+        xc = abs(col1 - col)
+        if row1 != row and col1 != col and xc != xr:
+            return False
+
+        dx = 1 if row1 > row else -1 if row1 < row else 0
+        dy = 1 if col1 > col else -1 if col1 < col else 0
+        x = row + dx
+        y = col + dy
+        while x != row1 or y != col1:
+            if not (board.get_piece(x, y) is None):
+                return False
+            x = x + dx
+            y = y + dy
+        return True
 
 
 class Bishop:
-    """
-    Класс слона. Пока что заглушка, которая может ходить в любую клетку.
-    """
-    def __init__(self, color):
+    def __init__(self, row, col, color):
+        self.row = row
+        self.col = col
         self.color = color
 
-    def get_color(self):
-        return self.color
+    def set_position(self, row, col):
+        self.row = row
+        self.col = col
 
     def char(self):
         return 'B'
 
-    def can_move(self, board, row, col, row1, col1):
-        return True  # Заглушка
+    def get_color(self):
+        return self.color
+
+    def can_move(self, row, col):
+        if not (0 <= row < 8 and 0 <= col < 8):
+            return False
+        res = [abs(self.col - col), abs(self.row - row)]
+        if res[0] == res[1]:
+            return True
+        return False
 
 
 if __name__ == "__main__":
