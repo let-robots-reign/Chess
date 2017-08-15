@@ -129,6 +129,7 @@ class Board:
             return False
         self.field[row][col] = None  # Снять фигуру.
         self.field[row1][col1] = piece  # Поставить на новое место.
+        piece.set_position(row1, col1)
         self.color = opponent(self.color)
         return True
 
@@ -147,11 +148,15 @@ class Pawn:
         self.col = col
         self.color = color
 
-    def get_color(self):
-        return self.color
+    def set_position(self, row, col):
+        self.row = row
+        self.col = col
 
     def char(self):
         return 'P'
+
+    def get_color(self):
+        return self.color
 
     def can_move(self, board, row, col, row1, col1):
         # Пешка может ходить только по вертикали
@@ -178,7 +183,7 @@ class Pawn:
 
         return False
 
-    def can_attack(self, row, col, row1, col1):
+    def can_attack(self, board, row, col, row1, col1):
         direction = 1 if (self.color == WHITE) else -1
         return row + direction == row1 and (col + 1 == col1 or col - 1 == col1)
 
@@ -188,13 +193,16 @@ class Rook:
         self.row = row
         self.col = col
         self.color = color
-        self.a = 0
 
-    def get_color(self):
-        return self.color
+    def set_position(self, row, col):
+        self.row = row
+        self.col = col
 
     def char(self):
         return 'R'
+
+    def get_color(self):
+        return self.color
 
     def can_move(self, board, row, col, row1, col1):
         # Невозможно сделать ход в клетку, которая не лежит в том же ряду
@@ -230,29 +238,35 @@ class Knight:
         self.row = row
         self.col = col
 
-    def char(self):
-        return 'N'
-
     def get_color(self):
         return self.color
 
-    def can_move(self, row, col):
-        if not correct_coords(row, col):
+    def char(self):
+        return 'N'  # kNight, буква 'K' уже занята королём
+
+    def can_move(self, board, row, col, row1, col1):
+        if not correct_coords(row1, col1):
             return False
-        res = [abs(self.col - col), abs(self.row - row)]
+        res = [abs(col - col1), abs(row - row1)]
         if min(res) == 1 and max(res) == 2:
             return True
         return False
 
+    def can_attack(self, board, row, col, row1, col1):
+        return self.can_move(board, row, col, row1, col1)
+
 
 class King:
-    """
-    Класс короля. Пока что заглушка, которая может ходить в любую клетку.
-    """
+    '''Класс короля. Пока что заглушка, которая может ходить в любую клетку.'''
+
     def __init__(self, row, col, color):
         self.row = row
         self.col = col
         self.color = color
+
+    def set_position(self, row, col):
+        self.row = row
+        self.col = col
 
     def get_color(self):
         return self.color
@@ -262,6 +276,9 @@ class King:
 
     def can_move(self, board, row, col, row1, col1):
         return True  # Заглушка
+
+    def can_attack(self, board, row, col, row1, col1):
+        return self.can_move(board, row, col, row1, col1)
 
 
 class Queen:
@@ -274,11 +291,11 @@ class Queen:
         self.row = row
         self.col = col
 
-    def char(self):
-        return 'Q'
-
     def get_color(self):
         return self.color
+
+    def char(self):
+        return 'Q'
 
     def can_move(self, board, row, col, row1, col1):
         piece = board.get_piece(row1, col1)
@@ -305,6 +322,9 @@ class Queen:
             y = y + dy
         return True
 
+    def can_attack(self, board, row, col, row1, col1):
+        return self.can_move(board, row, col, row1, col1)
+
 
 class Bishop:
     def __init__(self, row, col, color):
@@ -316,20 +336,22 @@ class Bishop:
         self.row = row
         self.col = col
 
-    def char(self):
-        return 'B'
-
     def get_color(self):
         return self.color
 
-    def can_move(self, row, col):
-        if not (0 <= row < 8 and 0 <= col < 8):
+    def char(self):
+        return 'B'
+
+    def can_move(self, board, row, col, row1, col1):
+        if not correct_coords(row1, col1):
             return False
-        res = [abs(self.col - col), abs(self.row - row)]
+        res = [abs(col - col1), abs(row - row1)]
         if res[0] == res[1]:
             return True
         return False
 
+    def can_attack(self, board, row, col, row1, col1):
+        return self.can_move(board, row, col, row1, col1)
 
 if __name__ == "__main__":
     main()
