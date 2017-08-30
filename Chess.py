@@ -217,7 +217,7 @@ class Board:
                 if len(figures) > 1:
                     return True  # Если атакующих фигур две, то это мат
                 elif self.is_under_attack(board, figures[0][1], figures[0][2]):
-                    return False # Если атакующую фигуру можно съесть, то не мат
+                    return False  # Если атакующую фигуру можно съесть, то не мат
                 # Если фигуру нельзя съесть, остается только закрыть ее
                 elif isinstance(figures[0][0], Knight):  # Если фигура -- конь, то закрыть ее нельзя
                     return True
@@ -336,25 +336,42 @@ class Board:
         return False
 
 
-class Pawn:  # Класс, описывающий пешку
-    def __init__(self, row, col, color):
+class Piece:  # Класс, от которого наследуются все фигуры
+    def __init__(self, row, col, color):  # Определение координат фигуры и цвета
         self.row = row
         self.col = col
         self.color = color
 
-    def set_position(self, row, col):
+    def set_position(self, row, col):  # Переопределение координат фигуры
         self.row = row
         self.col = col
+
+    def get_color(self):  # Метод возвращает цвет фигуры
+        return self.color
+
+
+class Pawn(Piece):  # Класс, описывающий пешку
+    def __init__(self, row, col, color):
+        super().__init__(row, col, color)  # Параметры row, col, color, наследуются от класса Piece
+        self.two_ranks_move = False  # Параметр нужен для "взятия на проходе"
 
     def char(self):
         return 'P'
 
-    def get_color(self):
-        return self.color
-
     def can_move(self, board, row, col, row1, col1):
+        # Взятие на проходе
+        if self.get_color() == WHITE:
+            if isinstance(board.field[row1 - 1][col1], Pawn):  # Проверяем, есть ли по соседству пешки
+                if board.field[row1 - 1][col1].two_ranks_move and board.field[row1 - 1][col1].get_color() == BLACK:
+                    board.field[row1 - 1][col1] = None
+                    return True
+        elif self.get_color() == BLACK:
+            if isinstance(board.field[row1 + 1][col1], Pawn):
+                if board.field[row1 + 1][col1].two_ranks_move and board.field[row1 + 1][col1].get_color() == WHITE:
+                    board.field[row1 + 1][col1] = None
+                    return True
+
         # Пешка может ходить только по вертикали
-        # "Взятие на проходе" не реализовано
         if col != col1:
             return False
 
@@ -369,35 +386,28 @@ class Pawn:  # Класс, описывающий пешку
 
         # ход на 1 клетку
         if row + direction == row1:
+            self.two_ranks_move = False
             return True
 
         # ход на 2 клетки из начального положения
         if row == start_row and row + 2 * direction == row1 and board.field[row + direction][col] is None:
+            self.two_ranks_move = True
             return True
 
         return False
 
-    def can_attack(self, board, row, col, row1, col1):
+    def can_attack(self, board, row, col, row1, col1):  # Пешка - единственная фигура, которая атакует не так, как ходит
         direction = 1 if (self.color == WHITE) else -1
         return row + direction == row1 and (col + 1 == col1 or col - 1 == col1)
 
 
-class Rook:  # Класс, описывающий ладью
+class Rook(Piece):  # Класс, описывающий ладью
     def __init__(self, row, col, color):
-        self.row = row
-        self.col = col
-        self.color = color
+        super().__init__(row, col, color)
         self.turns = 0  # Количество ходов, нужно для рокировки
-
-    def set_position(self, row, col):
-        self.row = row
-        self.col = col
 
     def char(self):
         return 'R'
-
-    def get_color(self):
-        return self.color
 
     def can_move(self, board, row, col, row1, col1):
         # Невозможно сделать ход в клетку, которая не лежит в том же ряду
@@ -423,25 +433,11 @@ class Rook:  # Класс, описывающий ладью
         return self.can_move(board, row, col, row1, col1)
 
 
-class Knight:  # Класс, описывающий коня
-    def __init__(self, row, col, color):
-        self.row = row
-        self.col = col
-        self.color = color
-
-    def set_position(self, row, col):
-        self.row = row
-        self.col = col
-
-    def get_color(self):
-        return self.color
-
+class Knight(Piece):  # Класс, описывающий коня
     def char(self):
         return 'N'  # kNight, буква 'K' уже занята королём
 
     def can_move(self, board, row, col, row1, col1):
-        if not correct_coords(row1, col1):
-            return False
         res = [abs(col - col1), abs(row - row1)]
         if min(res) == 1 and max(res) == 2:
             return True
@@ -451,27 +447,18 @@ class Knight:  # Класс, описывающий коня
         return self.can_move(board, row, col, row1, col1)
 
 
-class King:  # Класс, описывающий короля
+class King(Piece):  # Класс, описывающий короля
     def __init__(self, row, col, color):
-        self.row = row
-        self.col = col
-        self.color = color
+        super().__init__(row, col, color)
         self.turns = 0  # Количество ходов, нужно для рокировки
-
-    def set_position(self, row, col):
-        self.row = row
-        self.col = col
-
-    def get_color(self):
-        return self.color
 
     def char(self):
         return 'K'
 
     def can_move(self, board, row, col, row1, col1):
-        if not correct_coords(row1, col1):
-            return False
         if abs(row1 - row) > 1 or abs(col1 - col) > 1:
+            return False
+        if board.is_under_attack(board, row1, col1):  # Запрет хода королем под шах
             return False
         if (row1, col1) == (0, 2):
             return board.castling_white0()
@@ -488,26 +475,12 @@ class King:  # Класс, описывающий короля
         return self.can_move(board, row, col, row1, col1)
 
 
-class Queen:  # Класс, описывающий ферзя
-    def __init__(self, row, col, color):
-        self.row = row
-        self.col = col
-        self.color = color
-
-    def set_position(self, row, col):
-        self.row = row
-        self.col = col
-
-    def get_color(self):
-        return self.color
-
+class Queen(Piece):  # Класс, описывающий ферзя
     def char(self):
         return 'Q'
 
     def can_move(self, board, row, col, row1, col1):
         piece = board.get_piece(row1, col1)
-        if not correct_coords(row1, col1):
-            return False
         if row == row1 and col == col1:
             return False
         if piece is not None:
@@ -533,25 +506,11 @@ class Queen:  # Класс, описывающий ферзя
         return self.can_move(board, row, col, row1, col1)
 
 
-class Bishop:  # Класс, описывающий слона
-    def __init__(self, row, col, color):
-        self.row = row
-        self.col = col
-        self.color = color
-
-    def set_position(self, row, col):
-        self.row = row
-        self.col = col
-
-    def get_color(self):
-        return self.color
-
+class Bishop(Piece):  # Класс, описывающий слона
     def char(self):
         return 'B'
 
     def can_move(self, board, row, col, row1, col1):
-        if not correct_coords(row1, col1):
-            return False
         res = [abs(col - col1), abs(row - row1)]
         if res[0] != res[1]:
             return False
