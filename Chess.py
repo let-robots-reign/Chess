@@ -1,5 +1,7 @@
 WHITE = 1
 BLACK = 2
+number_to_letter = {0: 'a', 1: 'b', 2: 'c', 3: 'd', 4: 'e', 5: 'f', 6: 'g', 7: 'h'}
+letter_to_number = {'a': 0, 'b': 1, 'c': 2, 'd': 3, 'e': 4, 'f': 5, 'g': 6, 'h': 7}
 
 
 def opponent(color):
@@ -12,14 +14,14 @@ def opponent(color):
 def print_board(board):  # Распечатать доску в текстовом виде
     print('     +----+----+----+----+----+----+----+----+')
     for row in range(7, -1, -1):
-        print(' ', row, end='  ')
+        print(' ', row + 1, end='  ')
         for col in range(8):
             print('|', board.cell(row, col), end=' ')
         print('|')
         print('     +----+----+----+----+----+----+----+----+')
     print(end='        ')
     for col in range(8):
-        print(col, end='    ')
+        print(number_to_letter[col], end='    ')
     print()
 
 
@@ -33,7 +35,7 @@ def main():
         # Подсказка по командам
         print('Команды:')
         print('    exit                               -- выход')
-        print('    move <row> <col> <row1> <row1>     -- ход из клетки (row, col)')
+        print('    <row> <col> <row1> <row1>     -- ход из клетки (row, col)')
         print('                                          в клетку (row1, col1)')
         # Выводим приглашение игроку нужного цвета
         if board.current_player_color() == WHITE:
@@ -43,8 +45,8 @@ def main():
         command = input()
         if command == 'exit':
             break
-        move_type, row, col, row1, col1 = command.split()
-        row, col, row1, col1 = int(row), int(col), int(row1), int(col1)
+        row, col, row1, col1 = int(command[1]) - 1, letter_to_number[command[0]], int(command[4]) - 1, letter_to_number[command[3]]
+        print(row, col, row1, col1)
         # Варианты ответа на введенный ход
         if board.move_piece(row, col, row1, col1):
             print('Ход успешен')
@@ -65,9 +67,9 @@ def main():
                     board.field[row][col] = None
             if board.stalemate_white(board):
                 print('Белым пат! Ничья!')
-            if board.stalemate_black(board): # Не стоит elif, потому что возможен обоюдный пат
+            if board.stalemate_black(board):  # Не стоит elif, потому что возможен обоюдный пат
                 print('Черным пат! Ничья!')
-            elif board.mate(board, board.king_white.row, board.king_white.col):
+            if board.mate(board, board.king_white.row, board.king_white.col):
                 print('Белому королю мат! Черные побеждают!')
             elif board.mate(board, board.king_black.row, board.king_black.col):
                 print('Черному королю мат! Белые побеждают!')
@@ -280,6 +282,7 @@ class Board:
                                         and not self.is_under_attack(board, row + j[0], col + j[1]):
                                     return False
             return True  # Если ни одного хода не найдено, то это пат
+        return False
 
     def stalemate_black(self, board):
         """
@@ -341,6 +344,7 @@ class Board:
                                         and not self.is_under_attack(board, row + j[0], col + j[1]):
                                     return False
             return True  # Если ни одного хода не найдено, то это пат
+        return False
 
     def move_and_promote_pawn(self, row, col, row1, col1):
         """
@@ -460,7 +464,7 @@ class Pawn(Piece):  # Класс, описывающий пешку
                     board.field[row1 - 1][col1] = None
                     return True
         elif self.get_color() == BLACK:
-            if isinstance(board.field[row1 + 1][col1], Pawn):
+            if correct_coords(row1 + 1, col1) and isinstance(board.field[row1 + 1][col1], Pawn):
                 if board.field[row1 + 1][col1].two_ranks_move and board.field[row1 + 1][col1].get_color() == WHITE:
                     board.field[row1 + 1][col1] = None
                     return True
@@ -632,6 +636,7 @@ class Bishop(Piece):  # Класс, описывающий слона
 
     def can_attack(self, board, row, col, row1, col1):
         return self.can_move(board, row, col, row1, col1)
+
 
 if __name__ == "__main__":
     main()
