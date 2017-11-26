@@ -1,5 +1,5 @@
-WHITE = 1
-BLACK = 2
+WHITE = 0
+BLACK = 1
 number_to_letter = {0: 'a', 1: 'b', 2: 'c', 3: 'd', 4: 'e', 5: 'f', 6: 'g', 7: 'h'}
 letter_to_number = {'a': 0, 'b': 1, 'c': 2, 'd': 3, 'e': 4, 'f': 5, 'g': 6, 'h': 7}
 
@@ -46,13 +46,12 @@ def main():
         if command == 'exit':
             break
         row, col, row1, col1 = int(command[1]) - 1, letter_to_number[command[0]], int(command[4]) - 1, letter_to_number[command[3]]
-        print(row, col, row1, col1)
         # Варианты ответа на введенный ход
         if board.move_piece(row, col, row1, col1):
             print('Ход успешен')
             if board.move_and_promote_pawn(row, col, row1, col1):  # Превращение пешки
                 pawn = board.field[row][col]
-                piece_char = input('Введите фигуру, на которую хотите заменить пешку: ')
+                piece_char = input('Введите фигуру, на которую хотите заменить пешку (Q, R, B, N): ')
                 if piece_char == 'Q':
                     board.field[row1][col1] = Queen(row1, col1, pawn.get_color())
                     board.field[row][col] = None
@@ -69,7 +68,7 @@ def main():
                 print('Белым пат! Ничья!')
             if board.stalemate_black(board):  # Не стоит elif, потому что возможен обоюдный пат
                 print('Черным пат! Ничья!')
-            if board.mate(board, board.king_white.row, board.king_white.col):
+            elif board.mate(board, board.king_white.row, board.king_white.col):
                 print('Белому королю мат! Черные побеждают!')
             elif board.mate(board, board.king_black.row, board.king_black.col):
                 print('Черному королю мат! Белые побеждают!')
