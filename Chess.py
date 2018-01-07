@@ -162,6 +162,8 @@ class Board:
                 return False
         else:
             return False
+        if isinstance(piece, King) and self.is_under_attack(self, row1, col1):  # Запрет хода королем под шах
+            return False
         self.field[row][col] = None  # Снять фигуру.
         self.field[row1][col1] = piece  # Поставить на новое место.
         piece.set_position(row1, col1)
@@ -180,7 +182,11 @@ class Board:
         for i in self.field:
             for piece in i:
                 if piece is not None:
-                    if self.field[row][col] is not None:
+                    if self.field[row][col] is None:
+                        if piece.get_color() != self.current_player_color() \
+                                and piece.can_move(board, piece.row, piece.col, row, col):
+                            figures.append([piece, piece.row, piece.col])
+                    else:
                         if piece.get_color() != self.field[row][col].get_color() \
                                 and piece.can_move(board, piece.row, piece.col, row, col):
                             figures.append([piece, piece.row, piece.col])
@@ -197,7 +203,8 @@ class Board:
             #  Проверяем, атакованы ли соседние с королём и свободные от его фигур поля
             moves_king = [(1, -1), (1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1)]  # Возможные ходы
             for i in moves_king:
-                if self.move_piece(row, col, row + i[0], col + i[1]) and not self.is_under_attack(board, row + i[0], col + i[1]):
+                if self.get_piece(row, col).can_move(board, row, col, row + i[0], col + i[1])\
+                        and not self.is_under_attack(board, row + i[0], col + i[1]):
                     possible_move = True
 
             if not possible_move:
@@ -277,7 +284,7 @@ class Board:
                         elif isinstance(piece, King):
                             moves_king = [(1, -1), (1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1)]
                             for j in moves_king:
-                                if self.move_piece(row, col, row + j[0], col + j[1]) \
+                                if piece.can_move(board, row, col, row + j[0], col + j[1]) \
                                         and not self.is_under_attack(board, row + j[0], col + j[1]):
                                     return False
             return True  # Если ни одного хода не найдено, то это пат
@@ -339,7 +346,7 @@ class Board:
                         elif isinstance(piece, King):
                             moves_king = [(1, -1), (1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1)]
                             for j in moves_king:
-                                if self.move_piece(row, col, row + j[0], col + j[1]) \
+                                if piece.can_move(board, row, col, row + j[0], col + j[1]) \
                                         and not self.is_under_attack(board, row + j[0], col + j[1]):
                                     return False
             return True  # Если ни одного хода не найдено, то это пат
@@ -352,10 +359,6 @@ class Board:
         piece = self.field[row][col]
         if not isinstance(piece, Pawn):
             return False
-        if self.field[row1][col1] is not None:
-            piece1 = self.field[row1][col1]
-            if piece1.get_color() == piece.get_color():
-                return False
         if not correct_coords(row1, col1):
             return False
         if (abs(row1 - row)) > 1 or (abs(col1 - col)) > 1:
@@ -370,6 +373,10 @@ class Board:
             return False
         if row1 > row and piece.get_color() == BLACK:
             return False
+        if self.field[row1][col1] is not None:
+            piece1 = self.field[row1][col1]
+            if piece1.get_color() == piece.get_color():
+                return False
         return True
 
     def castling_white0(self):  # Рокировка с Rook(0, 0)
@@ -560,8 +567,6 @@ class King(Piece):  # Класс, описывающий короля
         if not correct_coords(row1, col1):
             return False
         if abs(row1 - row) > 1 or abs(col1 - col) > 1:
-            return False
-        if board.is_under_attack(board, row1, col1):  # Запрет хода королем под шах
             return False
         if (row1, col1) == (0, 2):
             return board.castling_white0()

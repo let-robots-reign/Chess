@@ -7,6 +7,13 @@ def prepare_and_start():
     Function that initializes the board.
     """
     canvas.delete('all')
+    v.set('')
+    if board.current_player_color() == BLACK:
+        v.set('Ход белых')
+        tk.Label(master, textvariable=v, font=("Tahoma, 16")).place(x=415, y=860)
+    else:
+        v.set('Ход черных')
+        tk.Label(master, textvariable=v, font=("Tahoma, 16")).place(x=415, y=860)
     color_index = 0
     for row in range(ROWS):
         for col in range(COLS):
@@ -77,14 +84,19 @@ def prepare_and_start():
 
 
 def button_pressed(event):
+    info = tk.StringVar()
+    info.set('                                                                                      ')
     turns.append((event.widget.winfo_y() // 100, event.widget.winfo_x() // 100))
     if len(turns) % 2 == 0 and len(turns) > 0:
         row, col, row1, col1 = turns[-2][0], turns[-2][1], turns[-1][0], turns[-1][1]
         if board.move_piece(row, col, row1, col1):
-            print('Ход успешен')
+            tk.Label(master, textvariable=info, font=("Tahoma, 16")).place(x=250, y=20)
             if board.move_and_promote_pawn(row, col, row1, col1):  # Превращение пешки
                 pawn = board.field[row][col]
-                piece_char = input('Введите фигуру, на которую хотите заменить пешку (Q, R, B, N): ')
+                info.set('Введите фигуру, на которую хотите заменить пешку (Q, R, B, N): ')
+                tk.Label(master, textvariable=info, font=("Tahoma, 16")).place(x=150, y=20)
+                piece_char = tk.Entry(master, width=20, bd=1).place(x=300, y=20)
+                # piece_char = input('Введите фигуру, на которую хотите заменить пешку (Q, R, B, N): ')
                 if piece_char == 'Q':
                     board.field[row1][col1] = Queen(row1, col1, pawn.get_color())
                     board.field[row][col] = None
@@ -98,19 +110,26 @@ def button_pressed(event):
                     board.field[row1][col1] = Knight(row1, col1, pawn.get_color())
                     board.field[row][col] = None
             if board.stalemate_white(board):
-                print('Белым пат! Ничья!')
+                info.set('Белым пат! Ничья!')
+                tk.Label(master, textvaribale=info, font=("Tahoma, 16")).place(x=250, y=20)
             if board.stalemate_black(board):  # Не стоит elif, потому что возможен обоюдный пат
-                print('Черным пат! Ничья!')
+                info.set('Черным пат! Ничья!')
+                tk.Label(master, textvariable=info, font=("Tahoma, 16")).place(x=250, y=20)
             elif board.mate(board, board.king_white.row, board.king_white.col):
-                print('Белому королю мат! Черные побеждают!')
+                info.set('Белому королю мат! Черные побеждают!')
+                tk.Label(master, textvariable=info, font=("Tahoma, 16")).place(x=250, y=20)
             elif board.mate(board, board.king_black.row, board.king_black.col):
-                print('Черному королю мат! Белые побеждают!')
+                info.set('Черному королю мат! Черные побеждают!')
+                tk.Label(master, textvariable=info, font=("Tahoma, 16")).place(x=250, y=20)
             elif board.is_under_attack(board, board.king_white.row, board.king_white.col):
-                print('Белому королю шах!')
+                info.set('Белому королю шах!')
+                tk.Label(master, textvariable=info, font=("Tahoma, 16")).place(x=250, y=20)
             elif board.is_under_attack(board, board.king_black.row, board.king_black.col):
-                print('Черному королю шах!')
+                info.set('Черному королю шах!')
+                tk.Label(master, textvariable=info, font=("Tahoma, 16")).place(x=250, y=20)
         else:
-            print('Координаты некорректы! Попробуйте другой ход!')
+            info.set('Координаты некорректы! Попробуйте другой ход!')
+            tk.Label(master, textvariable=info, font=("Tahoma, 16")).place(x=250, y=20)
         main()
 
 
@@ -126,6 +145,7 @@ turns = []
 master = tk.Tk()
 board = Board()
 board.color = BLACK
+v = tk.StringVar()
 white_cell_pic = tk.PhotoImage(file='white_cell.gif')
 black_cell_pic = tk.PhotoImage(file='black_cell.gif')
 black_rook_pic = tk.PhotoImage(file='black_rook.gif')
@@ -142,5 +162,7 @@ white_king_pic = tk.PhotoImage(file='white_king.gif')
 white_pawn_pic = tk.PhotoImage(file='white_pawn.gif')
 canvas = tk.Canvas(master, width=CELL_SIZE * ROWS + 100, height=CELL_SIZE * COLS + 100)
 canvas.pack()
+whose_turn = tk.Label(master, text='Ход белых', font=("Tahoma, 16")).place(x=415, y=860)
+info = tk.Label(master, text='', font=("Tahoma, 16")).place(x=250, y=20)
 main()
 master.mainloop()
