@@ -5,13 +5,19 @@ letter_to_number = {'a': 0, 'b': 1, 'c': 2, 'd': 3, 'e': 4, 'f': 5, 'g': 6, 'h':
 
 
 def opponent(color):
+    """
+    Returns the color opposite to the current one.
+    """
     if color == WHITE:
         return BLACK
     else:
         return WHITE
 
 
-def print_board(board):  # Распечатать доску в текстовом виде
+def print_board(board):
+    """
+    Prints the board in ASCII
+    """
     print('     +----+----+----+----+----+----+----+----+')
     for row in range(7, -1, -1):
         print(' ', row + 1, end='  ')
@@ -26,6 +32,10 @@ def print_board(board):  # Распечатать доску в текстово
 
 
 def main():
+    """
+    Main function.
+    Handling the move.
+    """
     # Создаём шахматную доску
     board = Board()
     # Цикл ввода команд игроков
@@ -45,6 +55,7 @@ def main():
         command = input()
         if command == 'exit':
             break
+        # Переводим команду из понятных человеку в цифры ряда и столбца
         row, col, row1, col1 = int(command[1]) - 1, letter_to_number[command[0]], int(command[4]) - 1, letter_to_number[command[3]]
         # Варианты ответа на введенный ход
         if board.move_piece(row, col, row1, col1):
@@ -64,17 +75,17 @@ def main():
                 elif piece_char == 'N':
                     board.field[row1][col1] = Knight(row1, col1, pawn.get_color())
                     board.field[row][col] = None
-            if board.stalemate_white(board):
+            if board.stalemate_white(board):  # Пат белым
                 print('Белым пат! Ничья!')
-            if board.stalemate_black(board):  # Не стоит elif, потому что возможен обоюдный пат
+            if board.stalemate_black(board):  # Пат черным. Не стоит elif, потому что возможен обоюдный пат
                 print('Черным пат! Ничья!')
-            elif board.mate(board, board.king_white.row, board.king_white.col):
+            elif board.mate(board, board.king_white.row, board.king_white.col):  # Мат белым
                 print('Белому королю мат! Черные побеждают!')
-            elif board.mate(board, board.king_black.row, board.king_black.col):
+            elif board.mate(board, board.king_black.row, board.king_black.col):  # Мат черным
                 print('Черному королю мат! Белые побеждают!')
-            elif board.is_under_attack(board, board.king_white.row, board.king_white.col):
+            elif board.is_under_attack(board, board.king_white.row, board.king_white.col):  # Шах белым
                 print('Белому королю шах!')
-            elif board.is_under_attack(board, board.king_black.row, board.king_black.col):
+            elif board.is_under_attack(board, board.king_black.row, board.king_black.col):  # Шах черным
                 print('Черному королю шах!')
         else:
             print('Координаты некорректы! Попробуйте другой ход!')
@@ -82,21 +93,21 @@ def main():
 
 def correct_coords(row, col):
     """
-    Функция проверяет, что координаты (row, col) лежат
-    внутри доски
+    Checks if "row" and "col" are within the board.
     """
     return 0 <= row < 8 and 0 <= col < 8
 
 
 class Board:
     def __init__(self):
-        self.color = WHITE
-        self.field = []
-        self.king_white = King(0, 4, WHITE)
-        self.king_black = King(7, 4, BLACK)
+        self.color = WHITE  # начальный цвет - белый
+        self.field = []  # массив доски (пока пустой)
+        self.king_white = King(0, 4, WHITE)  # объект короля белых
+        self.king_black = King(7, 4, BLACK)  # объект короля черных
         # Задаем фигуры на доске
         for row in range(8):
-            self.field.append([None] * 8)
+            self.field.append([None] * 8)  # Вначале заполняем 64 клетки типом None
+        # Заполняем доску фигурами
         self.field[0] = [
             Rook(0, 0, WHITE), Knight(0, 1, WHITE), Bishop(0, 2, WHITE), Queen(0, 3, WHITE),
             self.king_white, Bishop(0, 5, WHITE), Knight(0, 6, WHITE), Rook(0, 7, WHITE)
@@ -119,9 +130,8 @@ class Board:
 
     def cell(self, row, col):
         """
-        Возвращает строку из двух символов. Если в клетке (row, col)
-        находится фигура, символы цвета и фигуры. Если клетка пуста,
-        то два пробела.
+        Returns a string representing the piece.
+        Format: 'w' or 'b' + piece char.
         """
         piece = self.field[row][col]
         if piece is None:
@@ -132,7 +142,7 @@ class Board:
 
     def get_piece(self, row, col):
         """
-        Возвращает объект - фигуру
+        Returns an object representing the piece.
         """
         if correct_coords(row, col):
             return self.field[row][col]
@@ -141,24 +151,24 @@ class Board:
 
     def move_piece(self, row, col, row1, col1):
         """
-        Переместить фигуру из точки (row, col) в точку (row1, col1).
-        Если перемещение возможно, метод выполнит его и вернёт True.
-        Если нет -- вернёт False
+        Moves the piece from (row, col) to (row1, col1)
+        If movable, returns True
+        Otherwise, False
         """
         if not correct_coords(row, col) or not correct_coords(row1, col1):
-            return False
+            return False # Нельзя пойти за пределы доски
         if row == row1 and col == col1:
             return False  # Нельзя пойти в ту же клетку
-        piece = self.field[row][col]
+        piece = self.field[row][col]  # "Вытаскиваем фигуру"
         if piece is None:
-            return False
+            return False  # Если не фигура
         if piece.get_color() != self.color:
-            return False
-        if self.field[row1][col1] is None:
-            if not piece.can_move(self, row, col, row1, col1):
-                return False
-        elif self.field[row1][col1].get_color() == opponent(piece.get_color()):
-            if not piece.can_attack(self, row, col, row1, col1):
+            return False  # Если фигура не того цвета
+        if self.field[row1][col1] is None:                          # Если клекта, в которую ходим, свободна
+            if not piece.can_move(self, row, col, row1, col1):      # Но если фигура туда пойти не может
+                return False                                        # Вернет False
+        elif self.field[row1][col1].get_color() == opponent(piece.get_color()):  # Если в клетке - фигура другого цвета
+            if not piece.can_attack(self, row, col, row1, col1):                 #
                 return False
         else:
             return False
