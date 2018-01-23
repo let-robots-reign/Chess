@@ -93,24 +93,23 @@ def button_pressed(event):
     """
     Handles the move.
     """
-    global turns
+    global turns  # список должен изменяться и вне функции
     info.set('                                                                                      ')
-    turns.append((event.widget.winfo_y() // 100, event.widget.winfo_x() // 100))
+    turns.append((event.widget.winfo_y() // 100, event.widget.winfo_x() // 100))  # координаты нажатия клавиши
     if len(turns) == 2:
         row, col, row1, col1 = turns[0][0], turns[0][1], turns[1][0], turns[1][1]
-        piece = field[row][col]
-        piece_literal = board.cell(row, col)
+        piece_literal = board.cell(row, col)  # обозначение фигуры, стоящей на этом месте
         if board.move_piece(row, col, row1, col1):
             tk.Label(master, textvariable=info, font=("Tahoma, 16")).place(x=250, y=20)
-
+            # рисуем пустую кнопку на том месте, где стояла фигура
             color_index1 = 0 if get_cell_color(row, col) == 0 else 1
             img1 = black_cell_pic if color_index1 == 0 else white_cell_pic
             tk.Button(master, image=img1, bg=cell_colors[color_index1], height=95, width=95).place(x=col * 100 + 50,
                                                                                                    y=row * 100 + 50)
+
             color_index2 = 1 if get_cell_color(row1, col1) == 0 else 0
 
             if piece_literal[1] == 'P':
-                #print(1)
                 img = white_pawn_pic if piece_literal[0] == 'b' else black_pawn_pic
                 tk.Button(master, image=img, bg=cell_colors[color_index2], height=95, width=95).place(x=col1 * 100 + 50,
                                                                                                       y=row1 * 100 + 50)
@@ -139,46 +138,27 @@ def button_pressed(event):
                 img = white_bishop_pic if piece_literal[0] == 'b' else black_bishop_pic
                 tk.Button(master, image=img, bg=cell_colors[color_index2], height=95, width=95).place(x=col1 * 100 + 50,
                                                                                                       y=row1 * 100 + 50)
-
-            if board.move_and_promote_pawn(row, col, row1, col1):  # Превращение пешки
-                pawn = board.field[row][col]
-                info.set('Введите фигуру, на которую хотите заменить пешку (Q, R, B, N): ')
-                tk.Label(master, textvariable=info, font=("Tahoma, 16")).place(x=150, y=20)
-                piece_char = tk.Entry(master, width=20, bd=1).place(x=300, y=20)
-                if piece_char == 'Q':
-                    field[row1][col1] = Queen(row1, col1, pawn.get_color())
-                    field[row][col] = None
-                elif piece_char == 'R':
-                    field[row1][col1] = Rook(row1, col1, pawn.get_color())
-                    field[row][col] = None
-                elif piece_char == 'B':
-                    field[row1][col1] = Bishop(row1, col1, pawn.get_color())
-                    field[row][col] = None
-                elif piece_char == 'N':
-                    field[row1][col1] = Knight(row1, col1, pawn.get_color())
-                    field[row][col] = None
             if board.stalemate_white(board):
-                info.set('Белым пат! Ничья!')
+                info.set('Черным пат! Ничья!')
                 tk.Label(master, textvaribale=info, font=("Tahoma, 16")).place(x=250, y=20)
             if board.stalemate_black(board):  # Не стоит elif, потому что возможен обоюдный пат
-                info.set('Черным пат! Ничья!')
+                info.set('Белым пат! Ничья!')
                 tk.Label(master, textvariable=info, font=("Tahoma, 16")).place(x=250, y=20)
             elif board.mate(board, board.king_white.row, board.king_white.col):
-                info.set('Белому королю мат! Черные побеждают!')
+                info.set('Черному королю мат! Белые побеждают!')
                 tk.Label(master, textvariable=info, font=("Tahoma, 16")).place(x=250, y=20)
             elif board.mate(board, board.king_black.row, board.king_black.col):
-                info.set('Черному королю мат! Черные побеждают!')
+                info.set('Белому королю мат! Черные побеждают!')
                 tk.Label(master, textvariable=info, font=("Tahoma, 16")).place(x=250, y=20)
             elif board.is_under_attack(board, board.king_white.row, board.king_white.col):
-                info.set('Белому королю шах!')
+                info.set('Черному королю шах!')
                 tk.Label(master, textvariable=info, font=("Tahoma, 16")).place(x=250, y=20)
             elif board.is_under_attack(board, board.king_black.row, board.king_black.col):
-                info.set('Черному королю шах!')
+                info.set('Белому королю шах!')
                 tk.Label(master, textvariable=info, font=("Tahoma, 16")).place(x=250, y=20)
         else:
             info.set('Координаты некорректы! Попробуйте другой ход!')
             tk.Label(master, textvariable=info, font=("Tahoma, 16")).place(x=250, y=20)
-        #print(turns)
         turns = []
     if board.current_player_color() == BLACK:
         v.set('Ход белых')
